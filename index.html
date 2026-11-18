@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Smart Route Navigator</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header>
+  <div>
+    <h1>Smart Route Navigator</h1>
+    <p>A* dan Dijkstra pada grid 40 x 25, dengan MinHeap sendiri dan biaya area macet.</p>
+  </div>
+  <div class="badge">Vanilla JS · priority queue O(log N)</div>
+</header>
+<main class="app">
+  <section class="panel canvas-wrap">
+    <div class="toolbar" id="tools">
+      <button type="button" data-tool="wall" aria-pressed="true">Tembok</button>
+      <button type="button" data-tool="traffic" aria-pressed="false">Area Ramai</button>
+      <button type="button" data-tool="erase" aria-pressed="false">Hapus</button>
+      <button type="button" data-tool="start" aria-pressed="false">Pindah Start</button>
+      <button type="button" data-tool="goal" aria-pressed="false">Pindah Goal</button>
+      <button type="button" id="maze">Generate Random Maze</button>
+      <button type="button" id="clear">Bersihkan Peta</button>
+    </div>
+    <div class="stage"><canvas id="map" width="800" height="500"></canvas></div>
+    <div class="legend">
+      <span><i class="swatch" style="background:#3dd68c"></i>Start</span>
+      <span><i class="swatch" style="background:#ff5d73"></i>Goal</span>
+      <span><i class="swatch" style="background:#31425f"></i>Tembok</span>
+      <span><i class="swatch" style="background:#c9843a"></i>Macet, biaya 5</span>
+      <span><i class="swatch" style="background:#2f6fbe"></i>Dieksplorasi</span>
+      <span><i class="swatch" style="background:#f4d35e"></i>Jalur</span>
+    </div>
+  </section>
+  <aside class="panel">
+    <h2>Kontrol algoritma</h2>
+    <label>Algoritma
+      <select id="algo">
+        <option value="astar">A* Search</option>
+        <option value="dijkstra">Dijkstra</option>
+      </select>
+    </label>
+    <label>Heuristik A*
+      <select id="heuristic">
+        <option value="manhattan">Manhattan Distance</option>
+        <option value="euclidean">Euclidean Distance</option>
+      </select>
+    </label>
+    <label>Kecepatan animasi
+      <span class="speed"><span id="speedLabel">Cepat</span><span id="speedValue">12 sel/frame</span></span>
+      <input id="speed" type="range" min="0" max="3" step="1" value="1" />
+    </label>
+    <div class="actions">
+      <button type="button" id="run" class="primary">Jalankan</button>
+      <button type="button" id="stop">Stop</button>
+      <button type="button" id="compare" class="ghost">Bandingkan A* vs Dijkstra</button>
+    </div>
+    <div class="status" id="status">Siap. Klik atau drag untuk menggambar, lalu jalankan pencarian.</div>
+    <h2>Metrik performa</h2>
+    <div class="metrics">
+      <div class="metric"><span>Waktu eksekusi</span><strong id="ms">-</strong></div>
+      <div class="metric"><span>Node dieksplorasi</span><strong id="visited">-</strong></div>
+      <div class="metric"><span>Biaya jalur</span><strong id="cost">-</strong></div>
+      <div class="metric"><span>Jumlah langkah</span><strong id="steps">-</strong></div>
+    </div>
+    <div class="compare" id="compareOut">Jalankan perbandingan untuk melihat kedua algoritma pada peta yang sama.</div>
+    <p class="hint">Gerakan empat arah. Sel biasa berbiaya 1 dan area macet berbiaya 5. Start tidak menambah biaya. Jumlah langkah berbeda dari biaya karena sel macet bernilai 5.</p>
+  </aside>
+</main>
+<script src="script.js"></script>
+</body>
+</html>
