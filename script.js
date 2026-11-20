@@ -1,23 +1,11 @@
 "use strict";
-const canvas = document.getElementById("map");
-const ctx = canvas.getContext("2d");
-const cols = 40, rows = 25;
-function draw() {
-  const box = canvas.parentElement.getBoundingClientRect();
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = Math.max(320, Math.round(box.width * dpr));
-  canvas.height = Math.round(canvas.width * rows / cols);
-  const w = canvas.width / cols, h = canvas.height / rows;
-  ctx.fillStyle = "#0d1427";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.strokeStyle = "rgba(232,238,252,.12)";
-  ctx.lineWidth = 1;
-  for (let c = 0; c <= cols; c++) { ctx.beginPath(); ctx.moveTo(c*w,0); ctx.lineTo(c*w,canvas.height); ctx.stroke(); }
-  for (let r = 0; r <= rows; r++) { ctx.beginPath(); ctx.moveTo(0,r*h); ctx.lineTo(canvas.width,r*h); ctx.stroke(); }
-  for (const [c,r,color,label] of [[4,12,"#3dd68c","S"],[35,12,"#ff5d73","G"]]) {
-    ctx.fillStyle=color; ctx.beginPath(); ctx.arc((c+.5)*w,(r+.5)*h,Math.max(5,Math.min(w,h)*.36),0,Math.PI*2); ctx.fill();
-    ctx.fillStyle="#081018"; ctx.font=`700 ${Math.max(9,Math.min(w,h)*.48)}px sans-serif`; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.fillText(label,(c+.5)*w,(r+.5)*h);
-  }
-}
-window.addEventListener("resize", draw);
-draw();
+const canvas=document.getElementById("map"),ctx=canvas.getContext("2d"),C=40,R=25;
+let grid=Array.from({length:R},()=>Array(C).fill(0)),start={c:4,r:12},goal={c:35,r:12},tool="wall",path=[];
+function draw(){let box=canvas.parentElement.getBoundingClientRect(),d=Math.min(devicePixelRatio||1,2);canvas.width=Math.max(320,Math.round(box.width*d));canvas.height=Math.round(canvas.width*R/C);let w=canvas.width/C,h=canvas.height/R;ctx.fillStyle="#0d1427";ctx.fillRect(0,0,canvas.width,canvas.height);for(let r=0;r<R;r++)for(let c=0;c<C;c++)if(grid[r][c]){ctx.fillStyle=grid[r][c]===1?"#31425f":"#9b6b32";ctx.fillRect(c*w+1,r*h+1,w-2,h-2);}ctx.strokeStyle="rgba(232,238,252,.14)";ctx.lineWidth=1;for(let c=0;c<=C;c++){ctx.beginPath();ctx.moveTo(c*w,0);ctx.lineTo(c*w,canvas.height);ctx.stroke();}for(let r=0;r<=R;r++){ctx.beginPath();ctx.moveTo(0,r*h);ctx.lineTo(canvas.width,r*h);ctx.stroke();}if(path.length){ctx.strokeStyle="#f4d35e";ctx.lineWidth=Math.max(3,w*.22);ctx.beginPath();path.forEach((p,i)=>i?ctx.lineTo((p.c+.5)*w,(p.r+.5)*h):ctx.moveTo((p.c+.5)*w,(p.r+.5)*h));ctx.stroke();}for(const[p,col,l]of[[start,"#3dd68c","S"],[goal,"#ff5d73","G"]]){ctx.fillStyle=col;ctx.beginPath();ctx.arc((p.c+.5)*w,(p.r+.5)*h,Math.min(w,h)*.36,0,7);ctx.fill();ctx.fillStyle="#081018";ctx.font=`bold ${Math.max(9,h*.5)}px sans-serif`;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(l,(p.c+.5)*w,(p.r+.5)*h);}}
+function at(e){let b=canvas.getBoundingClientRect();return{c:Math.floor((e.clientX-b.left)*C/b.width),r:Math.floor((e.clientY-b.top)*R/b.height)}}
+canvas.addEventListener("pointerdown",e=>{let p=at(e);if(p.c<0||p.c>=C||p.r<0||p.r>=R)return;path=[];if(tool==="start")start=p;else if(tool==="goal")goal=p;else grid[p.r][p.c]=tool==="wall"?1:tool==="traffic"?2:0;draw()});
+document.querySelectorAll("[data-tool]").forEach(b=>b.onclick=()=>{tool=b.dataset.tool;document.querySelectorAll("[data-tool]").forEach(x=>x.setAttribute("aria-pressed",String(x===b))) });
+document.getElementById("clear").onclick=()=>{grid=Array.from({length:R},()=>Array(C).fill(0));start={c:4,r:12};goal={c:35,r:12};path=[];draw()};
+document.getElementById("maze").onclick=()=>{grid=Array.from({length:R},()=>Array.from({length:C},()=>Math.random()<.25?1:0));grid[start.r][start.c]=grid[goal.r][goal.c]=0;path=[];draw()};
+document.getElementById("run").onclick=()=>{let id=p=>p.r*C+p.c,s=id(start),t=id(goal),dist=Array(C*R).fill(Infinity),prev=Array(C*R).fill(-1),done=new Set(),q=[[0,s]];dist[s]=0;while(q.length){q.sort((a,b)=>a[0]-b[0]);let[d,u]=q.shift();if(done.has(u))continue;done.add(u);if(u===t)break;let c=u%C,r=Math.floor(u/C);for(let[dc,dr]of[[1,0],[-1,0],[0,1],[0,-1]]){let x=c+dc,y=r+dr,v=y*C+x;if(x<0||x>=C||y<0||y>=R||grid[y][x]===1)continue;let nd=d+(grid[y][x]===2?5:1);if(nd<dist[v]){dist[v]=nd;prev[v]=u;q.push([nd+(document.getElementById("algo").value==="astar"?Math.abs(x-goal.c)+Math.abs(y-goal.r):0),v])}}}path=[];for(let u=t;u!==-1;u=prev[u]){path.unshift({c:u%C,r:Math.floor(u/C)});if(u===s)break}if(!path.length||id(path[0])!==s)path=[];draw();document.getElementById("status").textContent=path.length?`Jalur ditemukan. Biaya ${dist[t]}, ${path.length-1} langkah.`:"Tidak ada jalur.";document.getElementById("cost").textContent=path.length?dist[t]:"-";document.getElementById("steps").textContent=path.length?path.length-1:"-";document.getElementById("visited").textContent=done.size};
+document.getElementById("compare").onclick=()=>{document.getElementById("algo").value="astar";document.getElementById("run").click();document.getElementById("compareOut").textContent="A* path calculated; select Dijkstra and run to compare."};document.getElementById("stop").onclick=()=>{};window.addEventListener("resize",draw);draw();
